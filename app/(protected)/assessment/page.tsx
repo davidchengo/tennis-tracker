@@ -10,14 +10,26 @@ interface LocalProgress {
   confidenceScore: number
 }
 
+interface Toast {
+  message: string
+  type: 'success' | 'error' | 'info'
+}
+
 export default function AssessmentPage() {
   const [data, setData] = useState<AssessmentData | null>(null)
   const [progressMap, setProgressMap] = useState<Record<string, LocalProgress>>({})
   const [isSaving, setIsSaving] = useState(false)
-  const [saveMessage, setSaveMessage] = useState('')
+  const [toast, setToast] = useState<Toast | null>(null)
   const [error, setError] = useState('')
   const pendingChangesRef = useRef<Record<string, LocalProgress>>({})
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function showToast(message: string, type: Toast['type'] = 'success') {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToast({ message, type })
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+  }
 
   // Load assessment data
   useEffect(() => {
@@ -42,17 +54,19 @@ export default function AssessmentPage() {
   }, [])
 
   // Auto-save with debounce
-  const saveProgress = useCallback(async (changes: Record<string, LocalProgress>) => {
+  const saveProgress = useCallback(async (changes: Record<string, LocalProgress>, silent = false) => {
     const updates = Object.entries(changes).map(([checklistItemId, { status, confidenceScore }]) => ({
       checklistItemId,
       status,
       confidenceScore,
     }))
 
-    if (updates.length === 0) return
+    if (updates.length === 0) {
+      if (!silent) showToast('All changes already saved ✓', 'info')
+      return
+    }
 
     setIsSaving(true)
-    setSaveMessage('')
 
     try {
       const res = await fetch('/api/assessment', {
@@ -61,14 +75,14 @@ export default function AssessmentPage() {
         body: JSON.stringify({ updates }),
       })
       if (!res.ok) throw new Error('Save failed')
-      setSaveMessage('Saved ✓')
-      setTimeout(() => setSaveMessage(''), 2000)
       pendingChangesRef.current = {}
+      showToast(`${updates.length} change${updates.length !== 1 ? 's' : ''} saved ✓`, 'success')
     } catch {
-      setSaveMessage('Save failed — will retry')
+      showToast('Save failed — please try again', 'error')
     } finally {
       setIsSaving(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handleChange(id: string, status: ProgressStatus, confidenceScore: number) {
@@ -79,7 +93,7 @@ export default function AssessmentPage() {
     // Debounce auto-save
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
     debounceTimerRef.current = setTimeout(() => {
-      saveProgress(pendingChangesRef.current)
+      saveProgress(pendingChangesRef.current, true) // silent auto-save
     }, 800)
   }
 
@@ -119,13 +133,6 @@ export default function AssessmentPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {saveMessage && (
-            <span
-              className={`text-xs font-medium ${saveMessage.includes('failed') ? 'text-red-500' : 'text-green-600'}`}
-            >
-              {saveMessage}
-            </span>
-          )}
           <Button
             variant="secondary"
             size="sm"
@@ -161,6 +168,24 @@ export default function AssessmentPage() {
           </span>
         </div>
       </div>
+
+      {/* Toast notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium text-white transition-all duration-300 ${
+            toast.type === 'success'
+              ? 'bg-green-600'
+              : toast.type === 'error'
+              ? 'bg-red-600'
+              : 'bg-gray-700'
+          }`}
+        >
+          <span>
+            {toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}
+          </span>
+          {toast.message}
+        </div>
+      )}
 
       {/* Levels */}
       {levels.map((level) => {
