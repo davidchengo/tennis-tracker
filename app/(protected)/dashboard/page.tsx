@@ -7,6 +7,7 @@ import { computeLevelResult, calculateItemScore } from '@/lib/scoring/engine'
 import type { ScoringItem } from '@/lib/scoring/types'
 import { ProgressBar } from '@/components/progress/ProgressBar'
 import { StrengthsCard } from '@/components/progress/StrengthsCard'
+import { PlayerScorecard } from '@/components/progress/PlayerScorecard'
 import { Button } from '@/components/ui/Button'
 
 export default async function DashboardPage() {
@@ -84,50 +85,16 @@ export default async function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{greeting} 👋</h1>
-        <p className="text-gray-500 text-sm mt-1">Here's your tennis progress overview.</p>
+        <p className="text-gray-500 text-sm mt-1">Here&apos;s your tennis progress overview.</p>
       </div>
 
-      {/* Score + Level Hero Card */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          {/* Score circle */}
-          <div className="flex-shrink-0 text-center">
-            <div className="relative inline-flex items-center justify-center w-28 h-28 rounded-full bg-green-50 border-4 border-green-500">
-              <div>
-                <div className="text-3xl font-black text-green-700">
-                  {Math.round(result.overallScore)}
-                </div>
-                <div className="text-xs text-green-600 font-medium">/ 100</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Level info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-1 rounded-full">
-                Level {result.currentLevel.order} · {result.currentLevel.name}
-              </span>
-            </div>
-            <p className="text-gray-600 text-sm mb-3">{result.currentLevel.description}</p>
-
-            {result.nextLevel && (
-              <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Progress to {result.nextLevel.name}</span>
-                  <span>{result.percentToNextLevel}%</span>
-                </div>
-                <ProgressBar value={result.percentToNextLevel} size="md" />
-              </div>
-            )}
-            {!result.nextLevel && (
-              <p className="text-sm font-semibold text-green-700">
-                🏆 You've reached the highest level!
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+      <PlayerScorecard
+        overallScore={result.overallScore}
+        currentLevel={result.currentLevel}
+        nextLevel={result.nextLevel}
+        percentToNextLevel={result.percentToNextLevel}
+        missingCoreCount={result.missingCoreItems.length}
+      />
 
       {/* Category Breakdown */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">

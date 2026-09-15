@@ -62,6 +62,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error, success, token }: A
   const [values, setValues] = useState<Record<string, string>>({})
   const [validationError, setValidationError] = useState('')
   const { title, subtitle, submitLabel, fields } = config[mode]
+  const isLogin = mode === 'login'
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -76,6 +77,68 @@ export function AuthForm({ mode, onSubmit, isLoading, error, success, token }: A
     const data = { ...values }
     if (token) data.token = token
     await onSubmit(data)
+  }
+
+  if (isLogin) {
+    return (
+      <section className="mx-auto w-full max-w-[430px] rounded-2xl border border-[#303743] bg-[#171c23] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-[22px]" aria-labelledby="login-title">
+        <p className="mb-2 text-xs font-extrabold tracking-[0.11em] text-[#64d26d]">SECURE PLAYER ACCESS</p>
+        <h1 id="login-title" className="text-[3.15rem] font-extrabold leading-[1.02] tracking-[-0.045em] text-[#f1f3f8] sm:text-[3.35rem]">
+          Player<br />Progress
+        </h1>
+        <p className="mt-2.5 max-w-[355px] text-[16px] font-medium leading-[1.28] text-[#aeb7c9]">
+          Sign in with the email authorized by your coach. A shared report link never grants access by itself.
+        </p>
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
+          <label className="block text-sm font-bold text-[#d9dee8]" htmlFor="email">
+            Authorized email
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={values.email ?? ''}
+              onChange={(e) => setValues((prev) => ({ ...prev, email: e.target.value }))}
+              autoComplete="email"
+              required
+              className="mt-1 block w-full rounded-[10px] border border-[#353c47] bg-[#13181f] px-3 py-2.5 text-base text-[#eef1f7] outline-none transition focus:border-[#58c968] focus:ring-1 focus:ring-[#58c968]"
+            />
+          </label>
+
+          <label className="block text-sm font-bold text-[#d9dee8]" htmlFor="password">
+            Password
+            <input
+              id="password"
+              name="password"
+              type="password"
+              value={values.password ?? ''}
+              onChange={(e) => setValues((prev) => ({ ...prev, password: e.target.value }))}
+              autoComplete="current-password"
+              required
+              className="mt-1 block w-full rounded-[10px] border border-[#353c47] bg-[#13181f] px-3 py-2.5 text-base text-[#eef1f7] outline-none transition focus:border-[#58c968] focus:ring-1 focus:ring-[#58c968]"
+            />
+          </label>
+
+          {(error || validationError) && (
+            <div className="rounded-lg border border-red-400/40 bg-red-500/10 p-3" role="alert">
+              <p className="text-sm text-red-200">{error || validationError}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="inline-flex min-h-10 items-center justify-center rounded-[9px] bg-[#55c75d] px-4 py-2.5 text-base font-extrabold text-[#09100b] transition hover:bg-[#67d36f] focus:outline-none focus:ring-2 focus:ring-[#76dc7d] focus:ring-offset-2 focus:ring-offset-[#171c23] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading ? 'Signing in…' : 'Sign in with email'}
+          </button>
+        </form>
+
+        <p className="mt-4 max-w-[355px] text-sm font-medium leading-[1.25] text-[#aeb7c9]">
+          Training-report emails contain only a report link—never an authentication link.
+        </p>
+      </section>
+    )
   }
 
   return (
@@ -103,9 +166,7 @@ export function AuthForm({ mode, onSubmit, isLoading, error, success, token }: A
             required
             autoComplete={
               field.name === 'password'
-                ? mode === 'login'
-                  ? 'current-password'
-                  : 'new-password'
+                ? 'new-password'
                 : field.name === 'email'
                 ? 'email'
                 : 'name'
@@ -132,21 +193,6 @@ export function AuthForm({ mode, onSubmit, isLoading, error, success, token }: A
 
       {/* Footer links */}
       <div className="mt-6 text-center space-y-2">
-        {mode === 'login' && (
-          <>
-            <p className="text-sm text-gray-500">
-              <Link href="/forgot-password" className="text-green-600 hover:underline">
-                Forgot your password?
-              </Link>
-            </p>
-            <p className="text-sm text-gray-500">
-              Don't have an account?{' '}
-              <Link href="/register" className="text-green-600 font-medium hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </>
-        )}
         {mode === 'register' && (
           <p className="text-sm text-gray-500">
             Already have an account?{' '}
